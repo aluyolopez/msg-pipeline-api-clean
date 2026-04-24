@@ -1,0 +1,86 @@
+plugins {
+	id 'java'
+	id 'org.springframework.boot' version '3.5.0'
+	id 'io.spring.dependency-management' version '1.1.7'
+}
+
+group = 'com.msgpipeline'
+version = '0.0.1'
+
+java {
+	toolchain {
+		languageVersion = JavaLanguageVersion.of(17)
+	}
+}
+
+configurations {
+	compileOnly {
+		extendsFrom annotationProcessor
+	}
+}
+
+repositories {
+	mavenCentral()
+}
+
+dependencies {
+	// Spring Boot starters
+	implementation 'org.springframework.boot:spring-boot-starter-web'
+	implementation 'org.springframework.boot:spring-boot-starter-actuator'
+	implementation 'org.springframework.boot:spring-boot-starter-validation'
+
+	// OpenAPI 3.0 / Swagger UI
+	implementation "org.springdoc:springdoc-openapi-starter-webmvc-ui:2.8.3"
+
+	// Lombok
+	compileOnly 'org.projectlombok:lombok'
+	annotationProcessor 'org.projectlombok:lombok'
+
+	// AWS Serverless Java Container: adapta Spring Boot al runtime Lambda.
+	// Convierte AwsProxyRequest → HttpServletRequest de Spring MVC.
+	implementation "com.amazonaws.serverless:aws-serverless-java-container-springboot3:2.0.3"
+
+	// AWS Lambda Core: clases base RequestHandler, Context, etc.
+	implementation "com.amazonaws:aws-lambda-java-core:1.2.3"
+
+	// AWS Lambda Events: SQSEvent, etc.
+	implementation "com.amazonaws:aws-lambda-java-events:3.11.4"
+
+	// AWS SDK v2 para DynamoDB (se usará en Sesión 03)
+	implementation platform("software.amazon.awssdk:bom:2.25.40")
+	implementation "software.amazon.awssdk:dynamodb"
+	implementation "software.amazon.awssdk:sqs"
+
+	// Test
+	testImplementation 'org.springframework.boot:spring-boot-starter-test'
+	testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+}
+
+tasks.named('test') {
+	useJUnitPlatform()
+}
+
+// ─── bootJar ───────────────────────────────────────────────────────────────
+// Genera el JAR ejecutable de Spring Boot para correr localmente.
+bootJar {
+	enabled = true
+	archiveFileName = 'msg-pipeline-api.jar'
+}
+
+// ─── lambdaJar ─────────────────────────────────────────────────────────────
+// Genera el fat JAR PLANO compatible con AWS Lambda (Sesión 02+).
+// AWS Lambda requiere las clases en la raíz del JAR, NO en BOOT-INF/classes/.
+tasks.register('lambdaJar', Jar) {
+	archiveFileName = 'msg-pipeline-orchestrator-lambda.jar'
+	duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+	manifest {
+		attributes("Main-Class": "com.msgpipeline.api.LambdaHandler")
+	}
+	from { sourceSets.main.output }
+	dependsOn configurations.runtimeClasspath
+	from {
+		configurations.runtimeClasspath.collect {
+			it.isDirectory() ? it : zipTree(it)
+		}
+	}
+}

@@ -1,0 +1,13 @@
+# application-local.yml — perfil de desarrollo local
+# Activo al ejecutar: ./gradlew bootRun --args="--spring.profiles.active=local"
+
+app:
+  aws:
+    region: us-east-1
+    dynamodb-table: msg-pipeline-messages   # nombre de la tabla (se usará en Sesión 03)
+    # sqs-queue-url: no se configura en Sesión 01 — se agrega en Sesión 03
+
+logging:
+  level:
+    com.msgpipeline: DEBUG
+    org.springframework.web: INFO

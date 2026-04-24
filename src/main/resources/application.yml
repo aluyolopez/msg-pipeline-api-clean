@@ -1,0 +1,20 @@
+# application.yml — configuración base compartida
+spring:
+  application:
+    name: msg-pipeline-api
+  profiles:
+    active: local    # perfil activo por defecto
+  main:
+    web-application-type: servlet
+
+server:
+  port: 8080
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics  # endpoints de Actuator expuestos
+  endpoint:
+    health:
+      show-details: always            # mostrar detalles del health check
